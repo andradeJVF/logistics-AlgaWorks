@@ -2,7 +2,8 @@ package com.logistics.api.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import javax.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.logistics.api.model.Cliente;
 import com.logistics.api.repository.ClienteRepository;
+import com.logistics.api.service.CadastroClienteService;
 
 import lombok.AllArgsConstructor;
 
@@ -25,8 +27,9 @@ import lombok.AllArgsConstructor;
 @RequestMapping("/clientes")
 public class ClienteController {
 
-	@Autowired
+	//injeção de dependencia realizada pela anotação AllArgsConstructor
 	private ClienteRepository clienteRepository;
+	private CadastroClienteService cadastroClienteService;
 
 	@GetMapping
 	public List<Cliente> getAll() {
@@ -34,9 +37,7 @@ public class ClienteController {
 	}
 
 	@GetMapping("/{clienteId}")
-	public ResponseEntity<Cliente> getById(@PathVariable Long clienteId) { // pathVariable vincula o parametro do método
-																			// a variavel do getMapping
-
+	public ResponseEntity<Cliente> getById(@PathVariable Long clienteId) { // pathVariable vincula o parametro do método a variavel do getMapping
 		return clienteRepository.findById(clienteId)
 				.map(ResponseEntity::ok)
 				.orElse(ResponseEntity.notFound().build());
@@ -44,19 +45,18 @@ public class ClienteController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public Cliente cadastrar(@RequestBody Cliente cliente) { // requestBody vincula o parametro do metodo ao corpo da
-																// requisição
-		return clienteRepository.save(cliente);
+	public Cliente cadastrar(@Valid @RequestBody Cliente cliente) { // requestBody vincula o parametro do metodo ao corpo da requisição
+		return cadastroClienteService.salvar(cliente);
 	}
 
 	@PutMapping("/{clienteId}")
-	public ResponseEntity<Cliente> atualizar(@PathVariable Long clienteId, @RequestBody Cliente cliente) {
+	public ResponseEntity<Cliente> atualizar(@Valid @PathVariable Long clienteId, @RequestBody Cliente cliente) {
 		if (!clienteRepository.existsById(clienteId)) {
 			return ResponseEntity.notFound().build();
 		}
 		
 		cliente.setId(clienteId);
-		cliente = clienteRepository.save(cliente);
+		cliente = cadastroClienteService.salvar(cliente);
 		
 		return ResponseEntity.ok(cliente);
 	}
@@ -67,7 +67,7 @@ public class ClienteController {
 			return ResponseEntity.notFound().build();
 		}
 		
-		clienteRepository.deleteById(clienteId);
+		cadastroClienteService.excluir(clienteId);
 		return ResponseEntity.noContent().build();
 	}
 }
